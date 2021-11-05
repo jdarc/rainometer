@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -14,9 +13,6 @@ namespace Rainometer
 {
     internal static class Program
     {
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern bool DestroyIcon(IntPtr handle);
-
         private const string KeyName = "HKEY_CURRENT_USER\\SOFTWARE\\Zentient\\Rainometer";
         private const string BaseQueryUrl = "https://api.openweathermap.org/data/2.5/weather";
 
@@ -41,7 +37,7 @@ namespace Rainometer
             {
                 var data = (await Curl.GetStringAsync(uri)).FromJson<WeatherData>();
 
-                notifyIcon.Text = $"{(int)data.Main.Temp}°C {TextInfo.ToTitleCase(data.Weather[0].Description)}";
+                notifyIcon.Text = $"{TextInfo.ToTitleCase(data.Weather[0].Description)}. {(int) data.Main.Temp}°C";
                 notifyIcon.Icon?.Dispose();
                 notifyIcon.Icon = weatherIcons[data.Weather[0].Icon];
             }
@@ -59,26 +55,23 @@ namespace Rainometer
 
         private static Dictionary<string, Icon> LoadWeatherIcons()
         {
+            var error = new Icon(typeof(Program), "Error.ico");
             var icons = new Dictionary<string, Icon>();
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceNames = assembly.GetManifestResourceNames();
 
-            foreach (var name in resourceNames)
+            var assembly = Assembly.GetExecutingAssembly();
+            foreach (var name in assembly.GetManifestResourceNames())
             {
                 using var stream = assembly.GetManifestResourceStream(name);
-                if (stream == null) { continue; }
-
-                var iconKey = name.Replace(".png", "").Split('.').Last();
-                icons.Add(iconKey, ConvertToIcon(Image.FromStream(stream)));
+                var key = name.Replace(".png", "").Split('.').Last().Trim().ToLower();
+                icons.Add(key, stream != null ? ImageStreamToIcon(stream) : error);
             }
 
             return icons;
         }
 
-        private static Icon ConvertToIcon(Image image)
+        private static Icon ImageStreamToIcon(Stream stream)
         {
-            using var bitmap = new Bitmap(image);
-            return Icon.FromHandle(bitmap.GetHicon());
+            return Icon.FromHandle(new Bitmap(Image.FromStream(stream)).GetHicon());
         }
     }
 }
