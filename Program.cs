@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -31,15 +32,28 @@ namespace Rainometer
             var apiKey = Registry.GetValue(KeyName, "ApiKey", "");
             var uri = $"{BaseQueryUrl}?id={cityId}&units={units}&APPID={apiKey}";
 
+            var error = new Icon(typeof(Program), "Error.ico");
             var weatherIcons = LoadWeatherIcons();
 
             async void Refresh(object _)
             {
-                var data = (await Curl.GetStringAsync(uri)).FromJson<WeatherData>();
+                string desc;
+                Icon icon;
+                try
+                {
+                    var data = (await Curl.GetStringAsync(uri)).FromJson<WeatherData>();
+                    desc = $"{TextInfo.ToTitleCase(data.Weather[0].Description)}. {(int) data.Main.Temp}°C";
+                    icon = weatherIcons[data.Weather[0].Icon];
+                }
+                catch (Exception ex)
+                {
+                    desc = ex.Message;
+                    icon = error;
+                }
 
-                notifyIcon.Text = $"{TextInfo.ToTitleCase(data.Weather[0].Description)}. {(int) data.Main.Temp}°C";
+                notifyIcon.Text = desc;
                 notifyIcon.Icon?.Dispose();
-                notifyIcon.Icon = weatherIcons[data.Weather[0].Icon];
+                notifyIcon.Icon = icon;
             }
 
             var timer = new System.Threading.Timer(Refresh, null, 0, 60000);
@@ -55,15 +69,18 @@ namespace Rainometer
 
         private static Dictionary<string, Icon> LoadWeatherIcons()
         {
-            var error = new Icon(typeof(Program), "Error.ico");
+            var missing = new Icon(typeof(Program), "Missing.ico");
             var icons = new Dictionary<string, Icon>();
 
             var assembly = Assembly.GetExecutingAssembly();
             foreach (var name in assembly.GetManifestResourceNames())
             {
-                using var stream = assembly.GetManifestResourceStream(name);
-                var key = name.Replace(".png", "").Split('.').Last().Trim().ToLower();
-                icons.Add(key, stream != null ? ImageStreamToIcon(stream) : error);
+                if (name.EndsWith(".png", true, CultureInfo.InvariantCulture))
+                {
+                    using var stream = assembly.GetManifestResourceStream(name);
+                    var key = name.Replace(".png", "").Split('.').Last().Trim().ToLower();
+                    icons.Add(key, stream != null ? ImageStreamToIcon(stream) : missing);
+                }
             }
 
             return icons;

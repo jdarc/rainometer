@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Error.ico" />
+    <EmbeddedResource Include="Missing.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
