@@ -51,6 +51,26 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WeatherData.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\01d.png" />
+    <EmbeddedResource Include="Icons\01n.png" />
+    <EmbeddedResource Include="Icons\02d.png" />
+    <EmbeddedResource Include="Icons\02n.png" />
+    <EmbeddedResource Include="Icons\03d.png" />
+    <EmbeddedResource Include="Icons\03n.png" />
+    <EmbeddedResource Include="Icons\04d.png" />
+    <EmbeddedResource Include="Icons\04n.png" />
+    <EmbeddedResource Include="Icons\09d.png" />
+    <EmbeddedResource Include="Icons\09n.png" />
+    <EmbeddedResource Include="Icons\10d.png" />
+    <EmbeddedResource Include="Icons\10n.png" />
+    <EmbeddedResource Include="Icons\11d.png" />
+    <EmbeddedResource Include="Icons\11n.png" />
+    <EmbeddedResource Include="Icons\13d.png" />
+    <EmbeddedResource Include="Icons\13n.png" />
+    <EmbeddedResource Include="Icons\50d.png" />
+    <EmbeddedResource Include="Icons\50n.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

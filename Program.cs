@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -17,8 +19,8 @@ namespace Rainometer
 
         private const string KeyName = "HKEY_CURRENT_USER\\SOFTWARE\\Zentient\\Rainometer";
         private const string BaseQueryUrl = "https://api.openweathermap.org/data/2.5/weather";
-        private const string BaseIconUrl = "https://openweathermap.org/img/wn";
 
+        private static readonly TextInfo TextInfo = Thread.CurrentThread.CurrentCulture.TextInfo;
         private static readonly HttpClient Curl = new();
 
         private static void Main()
@@ -33,14 +35,15 @@ namespace Rainometer
             var apiKey = Registry.GetValue(KeyName, "ApiKey", "");
             var uri = $"{BaseQueryUrl}?id={cityId}&units={units}&APPID={apiKey}";
 
+            var weatherIcons = LoadWeatherIcons();
+
             async void Refresh(object _)
             {
-                var json = (await Curl.GetStringAsync(uri)).FromJson<WeatherData>();
-                var icon = CropImage(await DownloadIcon(json));
-                
-                notifyIcon.Text = GenerateDescription(json);
+                var data = (await Curl.GetStringAsync(uri)).FromJson<WeatherData>();
+
+                notifyIcon.Text = $"{(int)data.Main.Temp}°C {TextInfo.ToTitleCase(data.Weather[0].Description)}";
                 notifyIcon.Icon?.Dispose();
-                notifyIcon.Icon = ConvertToIcon(icon);
+                notifyIcon.Icon = weatherIcons[data.Weather[0].Icon];
             }
 
             var timer = new System.Threading.Timer(Refresh, null, 0, 60000);
@@ -54,37 +57,28 @@ namespace Rainometer
             Application.Run();
         }
 
-        private static async Task<Image> DownloadIcon(WeatherData json)
+        private static Dictionary<string, Icon> LoadWeatherIcons()
         {
-            var iconData = await Curl.GetByteArrayAsync($"{BaseIconUrl}/{json.Weather[0].Icon}@2x.png");
-            using var iconStream = new MemoryStream(iconData);
-            return Image.FromStream(iconStream);
+            var icons = new Dictionary<string, Icon>();
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceNames = assembly.GetManifestResourceNames();
+
+            foreach (var name in resourceNames)
+            {
+                using var stream = assembly.GetManifestResourceStream(name);
+                if (stream == null) { continue; }
+
+                var iconKey = name.Replace(".png", "").Split('.').Last();
+                icons.Add(iconKey, ConvertToIcon(Image.FromStream(stream)));
+            }
+
+            return icons;
         }
 
-        private static Bitmap CropImage(Image original)
+        private static Icon ConvertToIcon(Image image)
         {
-            var processed = new Bitmap(80, 80);
-            var rect = new RectangleF(10.0f, 10.0f, 80.0f, 80.0f);
-            using var g = Graphics.FromImage(processed);
-            g.DrawImage(original, 0.0f, 0.0f, rect, GraphicsUnit.Pixel);
-            return processed;
-        }
-
-        private static string GenerateDescription(WeatherData json)
-        {
-            var textInfo = Thread.CurrentThread.CurrentCulture.TextInfo;
-            var desc = textInfo.ToTitleCase(json.Weather[0].Description);
-            return $"Feels like {json.Main.Temp} °C. {desc}.";
-        }
-
-        private static Icon ConvertToIcon(Bitmap bitmap)
-        {
-            var handle = bitmap.GetHicon();
-            var resource = Icon.FromHandle(handle);
-            var icon = (Icon) resource.Clone();
-            resource.Dispose();
-            DestroyIcon(handle);
-            return icon;
+            using var bitmap = new Bitmap(image);
+            return Icon.FromHandle(bitmap.GetHicon());
         }
     }
 }
