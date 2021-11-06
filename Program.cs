@@ -53,7 +53,7 @@ namespace Rainometer
 
                 notifyIcon.Text = desc;
                 notifyIcon.Icon?.Dispose();
-                notifyIcon.Icon = icon;
+                notifyIcon.Icon = (Icon)icon.Clone();
             }
 
             var timer = new System.Threading.Timer(Refresh, null, 0, 60000);
