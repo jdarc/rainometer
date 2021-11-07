@@ -8,6 +8,7 @@ using System.Text;
 
 namespace Rainometer
 {
+    // https://github.com/zanders3/json
     public static class JsonParser
     {
         [ThreadStatic] private static Stack<List<string>> _splitArrayPool;
