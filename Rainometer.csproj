@@ -76,6 +76,7 @@
         <EmbeddedResource Include="Missing.ico" />
     </ItemGroup>
     <ItemGroup>
+      <Content Include="Rainometer.reg" />
       <Content Include="README.md" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
