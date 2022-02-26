@@ -7,7 +7,7 @@ You will need to obtain an API key from the above website
 and update the `Rainometer.reg` file accordingly before applying it.
 
 ## Requirements
-*  .NET Framework 4.7.1
+- .NET Framework 4.5
 
 ## License
 MIT License
